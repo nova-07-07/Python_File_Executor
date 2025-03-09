@@ -2,19 +2,19 @@
 
 1. Clone the repo:
 
-  git clone https://github.com/your-username/python-file-executor.git
+  git clone https://github.com/nova-07-07/python-file-executor.git
   cd python-file-executor
   
 2. Start the Flask backend:
 
   cd server
-  pip install -r requirements.txt  
-  python app.py
+  pip install  
+  python server.py
   
 3. Start the React frontend:
 
   cd client
   npm install  
-  npm start
+  npm run dev
   
 Open the browser at (http://localhost:5173/) and start executing scripts!

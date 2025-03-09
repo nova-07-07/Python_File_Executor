@@ -1,81 +1,62 @@
-import { useState, useEffect } from "react";
-import axios from "axios";
+import { useState } from "react";
 import "./App.css";
 
 export default function App() {
-  const [files, setFiles] = useState([]); // Store available Python files
-  const [output, setOutput] = useState(null); // Script output
-  const [loading, setLoading] = useState(false); // Loading state
+  const [file, setFile] = useState(null);
+  const [output, setOutput] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const API_BASE_URL = "http://127.0.0.1:5000";
-
-  useEffect(() => {
-    fetchFiles();
-  }, []);
-
-  // Function to fetch file list
-  const fetchFiles = async () => {
-    try {
-      const response = await axios.get(`${API_BASE_URL}/files`);
-      setFiles(response.data.files);
-    } catch (err) {
-      console.error("Error fetching files:", err);
-    }
+  const handleFileChange = (event) => {
+    setFile(event.target.files[0]);
   };
 
-  // Function to execute the selected file
-  const executeFile = async (file) => {
+  const handleSubmit = async () => {
+    if (!file) {
+      alert("Please select a Python file first.");
+      return;
+    }
+
     setLoading(true);
-    setOutput(null);
+    const formData = new FormData();
+    formData.append("file", file);
 
     try {
-      const response = await axios.get(`${API_BASE_URL}/file-output`, {
-        params: { name: file },
+      const response = await fetch("http://localhost:5000/execute", {
+        method: "POST",
+        body: formData,
       });
 
-      setOutput(response.data.output);
-    } catch (err) {
-      console.error("Error executing file:", err);
+      const data = await response.json();
+      setOutput(data.output);
+    } catch (error) {
+      console.error("Error executing file:", error);
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <>
-      <h2>Python File Executor</h2>
-      <div className="container">
-        {/* File List */}
-        <div className="file-list">
-          <h3>Available Files:</h3>
-          <div className="files_div">
-            {files.length === 0 ? (
-              <p>No files found.</p>
-            ) : (
-              files.map((file, index) => (
-                <div className="file" key={index}>
-                  <button
-                    onClick={() => executeFile(file)}
-                    className="button"
-                    disabled={loading}
-                  >
-                    {"▶"}
-                  </button>
-                  <span>{file.toUpperCase()}</span>
-                </div>
-              ))
-            )}
-          </div>
+    <div className="app-container ffffff-container">
+      <h1 className="app-title ffffff-title">Python File Executor</h1>
+      <input
+        type="file"
+        accept=".py"
+        onChange={handleFileChange}
+        className="file-input ffffff-input"
+      />
+      <button
+        onClick={handleSubmit}
+        className="execute-button ffffff-button"
+      >
+        {loading ? "Executing..." : "Execute"}
+      </button>
+      {loading && <div className="loader ffffff-loader"></div>}
+      {output && (
+        <div className="output-container ffffff-output">
+          <h2 className="output-title ffffff-output-title">Output:</h2>
+          <pre className="output-text ffffff-output-text">{output}</pre>
         </div>
-
-        {/* Display Output */}
-        {output && (
-          <div className="output">
-            <h3>Execution Output:</h3>
-            <pre>{output}</pre>
-          </div>
-        )}
-      </div>
-    </>
+      )}
+    </div>
   );
 }

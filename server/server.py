@@ -1,39 +1,33 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
-import os
 import subprocess
+import sys
 
 app = Flask(__name__)
 CORS(app)
 
-FOLDER_PATH = r"I:\project\task-3\server\dir"  # Change to your actual folder path
-
-@app.route("/files", methods=["GET"])
-def list_files():
-    """Return a list of Python files in the specified folder."""
+@app.route('/execute', methods=['POST'])
+def execute_python():
+    if 'file' not in request.files:
+        return jsonify({'error': 'No file provided'}), 400
+    
+    file = request.files['file']
     try:
-        files = [f for f in os.listdir(FOLDER_PATH) if f.endswith(".py")]
-        return jsonify({"files": files})
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        code = file.read().decode('utf-8')
 
-@app.route("/file-output", methods=["GET"])
-def execute_file():
-    """Execute a Python file and return its output."""
-    filename = request.args.get("name")
-    
-    if not filename:
-        return jsonify({"error": "Filename is required"}), 400
-    
-    file_path = os.path.join(FOLDER_PATH, filename)
-    if not os.path.exists(file_path) or not filename.endswith(".py"):
-        return jsonify({"error": "Invalid or non-existent file"}), 400
-    
-    try:
-        result = subprocess.run(["python", file_path], capture_output=True, text=True)
-        return jsonify({"output": result.stdout, "error": result.stderr})
+        python_executable = sys.executable  
+        result = subprocess.run(
+            [python_executable, "-c", code],
+            capture_output=True,
+            text=True,
+            check=True
+        )
+        output = result.stdout
+    except subprocess.CalledProcessError as e:
+        output = e.stderr
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        output = str(e)
 
-if __name__ == "__main__":
-    app.run(debug=True)
+    return jsonify({'output': output})
+
+app.run()
